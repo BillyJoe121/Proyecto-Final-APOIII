@@ -49,6 +49,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 16px;
+            flex-wrap: wrap;
         }
 
         .title-block h1 {
@@ -71,6 +72,7 @@
             border: 1px solid rgba(56, 189, 248, 0.5);
             background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 55%);
             color: var(--accent);
+            white-space: nowrap;
         }
 
         main {
@@ -106,12 +108,12 @@
             box-shadow:
                 0 18px 45px rgba(15, 23, 42, 0.9),
                 0 0 0 1px rgba(15, 23, 42, 0.9);
-            padding: 16px 16px 18px;
+            padding: 20px;
         }
 
         .card h2 {
             margin: 0 0 8px;
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             font-weight: 600;
         }
 
@@ -137,6 +139,7 @@
             justify-content: space-between;
             gap: 10px;
             margin-top: 10px;
+            flex-wrap: wrap;
         }
 
         .hint {
@@ -155,46 +158,65 @@
             border-radius: 999px;
             border: 1px solid rgba(148, 163, 184, 0.4);
             color: var(--text-muted);
+            white-space: nowrap;
         }
 
+        /* Grid de actividades mejorado */
         .activities-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 8px;
-            margin-top: 8px;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
         }
 
+        /* Chips como mini-cards verticales */
         .activity-chip {
-            border-radius: 999px;
-            padding: 6px 10px;
-            font-size: 0.8rem;
+            border-radius: 16px;
+            padding: 8px 14px;
+            font-size: 0.82rem;
             border: 1px solid rgba(148, 163, 184, 0.35);
-            background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.9));
+            background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.96));
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 6px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            transition:
+                transform 0.15s ease,
+                border-color 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .activity-chip:hover {
+            transform: translateY(-1px);
+            border-color: rgba(56, 189, 248, 0.6);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.8);
         }
 
         .activity-label {
             color: var(--text-main);
+            font-weight: 500;
+            line-height: 1.2;
+            word-break: break-all;
+            /* para los snake_case largos */
         }
 
         .activity-tag {
             font-size: 0.7rem;
             color: var(--accent);
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
+            opacity: 0.9;
         }
 
         .legend {
-            margin-top: 10px;
-            padding: 8px 10px;
+            margin-top: 14px;
+            padding: 10px 12px;
             border-radius: 12px;
             background: rgba(15, 23, 42, 0.95);
             border: 1px dashed rgba(148, 163, 184, 0.35);
             font-size: 0.8rem;
             color: var(--text-muted);
+            line-height: 1.4;
         }
 
         footer {
