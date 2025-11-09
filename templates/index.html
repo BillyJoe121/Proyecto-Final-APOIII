@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconocimiento de Actividad Humana</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-card: #020617;
+            --accent: #38bdf8;
+            --accent-soft: rgba(56, 189, 248, 0.12);
+            --text-main: #ffffff;
+            --text-muted: #9ca3af;
+            --border-soft: #1f2933;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: radial-gradient(circle at top, #1f2937 0, #020617 45%, #000 100%);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+            backdrop-filter: blur(10px);
+            background: linear-gradient(to right, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.75));
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-inner {
+            max-width: 980px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .title-block h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .title-block p {
+            margin: 4px 0 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .badge-version {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(56, 189, 248, 0.5);
+            background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 55%);
+            color: var(--accent);
+        }
+
+        main {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 24px 16px 40px;
+        }
+
+        .layout {
+            width: 100%;
+            max-width: 980px;
+            display: grid;
+            grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            header {
+                position: static;
+            }
+        }
+
+        .card {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
+            border-radius: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow:
+                0 18px 45px rgba(15, 23, 42, 0.9),
+                0 0 0 1px rgba(15, 23, 42, 0.9);
+            padding: 16px 16px 18px;
+        }
+
+        .card h2 {
+            margin: 0 0 8px;
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .card p {
+            margin: 0 0 12px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        #video-feed {
+            display: block;
+            width: 100%;
+            max-width: 720px;
+            height: auto;
+            border-radius: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            background: radial-gradient(circle at top, #1f2937, #020617);
+        }
+
+        .hint-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .hint span {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .pill {
+            font-size: 0.75rem;
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            color: var(--text-muted);
+        }
+
+        .activities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .activity-chip {
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.9));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .activity-label {
+            color: var(--text-main);
+        }
+
+        .activity-tag {
+            font-size: 0.7rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .legend {
+            margin-top: 10px;
+            padding: 8px 10px;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px dashed rgba(148, 163, 184, 0.35);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        footer {
+            width: 100%;
+            text-align: center;
+            padding: 10px 0 18px;
+            font-size: 0.78rem;
+            color: #6b7280;
+        }
+
+        footer span {
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="header-inner">
+            <div class="title-block">
+                <h1>Reconocimiento de Actividad Humana</h1>
+                <p>Clasificación en tiempo real usando MediaPipe + XGBoost</p>
+            </div>
+            <div class="badge-version">
+                Modelo v2 · Ventana 30&nbsp;frames
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="layout">
+
+            <!-- Panel de video -->
+            <section class="card">
+                <h2>Vista en tiempo real</h2>
+                <p>
+                    Permite el acceso a tu cámara y ubícate de cuerpo completo frente a ella.
+                    La actividad estimada se dibuja directamente sobre el video.
+                </p>
+
+                <img id="video-feed" src="{{ url_for('video_feed') }}" alt="Video Stream">
+
+                <div class="hint-row">
+                    <div class="hint">
+                        Consejo: espera a que la barra indique
+                        <span>Collecting frames... (30/30)</span>
+                        para una predicción estable.
+                    </div>
+                    <div class="pill">
+                        FPS depende de tu PC 🖥️
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel de información -->
+            <section class="card">
+                <h2>Actividades que el modelo reconoce</h2>
+                <p>
+                    El modelo está entrenado sobre ventanas temporales de movimiento. Estas son las etiquetas que
+                    puede devolver:
+                </p>
+
+                <div class="activities-grid">
+                    <div class="activity-chip">
+                        <span class="activity-label">sitting_down</span>
+                        <span class="activity-tag">Transición</span>
+                    </div>
+                    <div class="activity-chip">
+                        <span class="activity-label">sitting_still</span>
+                        <span class="activity-tag">Estática</span>
+                    </div>
+                    <div class="activity-chip">
+                        <span class="activity-label">standing_still</span>
+                        <span class="activity-tag">Estática</span>
+                    </div>
+                    <div class="activity-chip">
+                        <span class="activity-label">standing_up</span>
+                        <span class="activity-tag">Transición</span>
+                    </div>
+                    <div class="activity-chip">
+                        <span class="activity-label">turning</span>
+                        <span class="activity-tag">Giro</span>
+                    </div>
+                    <div class="activity-chip">
+                        <span class="activity-label">walking_away_from_camera</span>
+                        <span class="activity-tag">Dinámica</span>
+                    </div>
+                    <div class="activity-chip">
+                        <span class="activity-label">walking_towards_camera</span>
+                        <span class="activity-tag">Dinámica</span>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    • El texto <strong>Activity: ...</strong> en el video es la predicción actual del modelo.<br>
+                    • Las etiquetas de transición aparecen mientras empiezas a sentarte / levantarte.<br>
+                    • Si te mueves muy poco, el modelo puede oscilar entre <em>standing_still</em> y
+                    <em>walking_towards_camera</em>.
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 · <span>Proyecto Final APO III</span> · Reconocimiento de Actividad Humana</p>
+    </footer>
+</body>
+
+</html>
