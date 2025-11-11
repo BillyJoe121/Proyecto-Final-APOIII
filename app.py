@@ -5,9 +5,14 @@ import joblib
 import numpy as np
 from collections import deque
 import time
+import pandas as pd  # Para construir window_df y pasar a heurísticas
 
-# Importar la NUEVA función de features y sus columnas
-from utils import calculate_frame_features_v2, FEATURE_COLUMNS_V2
+# Importar la NUEVA función de features, nombres de columnas y heurísticas
+from utils import (
+    calculate_frame_features_v2,
+    FEATURE_COLUMNS_V2,
+    refine_activity_with_heuristics,
+)
 
 # -------------------------------------------------------
 # Configuración general
@@ -73,8 +78,10 @@ def index():
 def generate_frames():
     """
     Genera frames para el stream de video.
-    Calcula features v2 por frame, arma ventanas y las pasa al modelo.
-    Aplica suavizado temporal por voto mayoritario.
+    - Calcula features v2 por frame (7 features).
+    - Arma ventanas de 30 frames.
+    - Resume cada ventana en 35 features (estadísticas) como en el notebook.
+    - Pasa al modelo, suaviza en el tiempo y aplica heurísticas geométricas.
     """
     global current_prediction, feature_buffer, prediction_history, last_update_time
 
@@ -120,20 +127,34 @@ def generate_frames():
             feature_buffer.append(frame_features)
 
             if len(feature_buffer) == WINDOW_SIZE:
-                # Ventana completa → aplanar: (30, 7) → (210,)
-                window_data = np.array(
-                    feature_buffer, dtype=np.float32).flatten()
-                window_data = window_data.reshape(1, -1)  # (1, 210)
+                # Ventana completa → (30, 7)
+                window_array = np.array(feature_buffer, dtype=np.float32)
+
+                # Convertimos a DataFrame para replicar la lógica del notebook
+                window_df = pd.DataFrame(
+                    window_array,
+                    columns=FEATURE_COLUMNS_V2,
+                )
+
+                # Mismas estadísticas que en create_windows_from_video:
+                # mean, std, min, max, median por cada feature
+                stats = window_df[FEATURE_COLUMNS_V2].agg(
+                    ["mean", "std", "min", "max", "median"]
+                ).transpose()
+
+                # Vector final de 35 features: (7 features * 5 estadísticas)
+                window_features = stats.values.flatten().reshape(1, -1)  # (1, 35)
 
                 # Escalar
-                scaled_data = scaler.transform(window_data)
+                scaled_data = scaler.transform(window_features)
 
                 if DEBUG_PREDICTION:
-                    print("\n--- Último frame (features v2) ---")
-                    for i, name in enumerate(FEATURE_COLUMNS_V2):
-                        print(f"{name}: {frame_features[i]:.4f}")
-                    print("\n--- Primeros 5 valores escalados de la ventana ---")
-                    print(scaled_data[0, :5])
+                    print("\n--- Ventana completa ---")
+                    print(f"Shape feature_buffer: {window_array.shape}")
+                    print(
+                        f"Shape window_features (antes de escalar): {window_features.shape}")
+                    print(
+                        f"Primeras 5 features escaladas: {scaled_data[0, :5]}")
 
                 # Predecir y suavizar
                 try:
@@ -153,10 +174,21 @@ def generate_frames():
                         )
                         dominant_encoded = int(values[np.argmax(counts)])
 
-                        current_prediction = le.inverse_transform(
-                            [dominant_encoded]
-                        )[0]
+                        raw_label = le.inverse_transform([dominant_encoded])[0]
 
+                        # Aplicar heurísticas geométricas para corregir:
+                        # - sentado vs de pie
+                        # - transiciones sentarse / levantarse
+                        # - walking vs standing_still
+                        refined_label = refine_activity_with_heuristics(
+                            window_df, raw_label
+                        )
+
+                        if DEBUG_PREDICTION:
+                            print(
+                                f"Raw label: {raw_label} -> Refined: {refined_label}")
+
+                        current_prediction = refined_label
                         last_update_time = now
 
                     # Si aún no se cumple el intervalo, dejamos current_prediction como está
@@ -172,13 +204,13 @@ def generate_frames():
 
         # --------- Dibujar la predicción en el frame ----------
         COLOR_MAP = {
-            "sitting_down": (0, 255, 255),            # amarillo
-            "sitting_still": (255, 0, 255),           # magenta
-            "standing_still": (0, 255, 0),            # verde
-            "standing_up": (255, 255, 0),             # cian
-            "turning": (255, 0, 0),                   # azul
-            "walking_away_from_camera": (0, 165, 255),  # naranja
-            "walking_towards_camera": (0, 0, 255),    # rojo
+            "sitting_down": (0, 255, 255),               # amarillo
+            "sitting_still": (255, 0, 255),              # magenta
+            "standing_still": (0, 255, 0),               # verde
+            "standing_up": (255, 255, 0),                # cian
+            "turning": (255, 0, 0),                      # azul
+            "walking_away_from_camera": (0, 165, 255),   # naranja
+            "walking_towards_camera": (0, 0, 255),       # rojo
         }
 
         default_color = (255, 255, 255)
