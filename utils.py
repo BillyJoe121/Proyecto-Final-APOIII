@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 # ============================================================
 # Nombres de landmarks según MediaPipe Pose
@@ -438,3 +439,54 @@ def calculate_frame_features_v2(landmarks):
         if DEBUG_FEATURES:
             print(f"Error inesperado en calculate_frame_features_v2: {e}")
         return None
+
+
+def refine_activity_with_heuristics(window_df: pd.DataFrame, raw_label: str) -> str:
+    """
+    Ajusta la predicción del modelo usando reglas geométricas simples
+    basadas en la ventana completa.
+
+    window_df: DataFrame con columnas FEATURE_COLUMNS_V2 para los 30 frames.
+    raw_label: etiqueta que salió del modelo (string).
+    """
+    # Por seguridad
+    if window_df is None or window_df.empty:
+        return raw_label
+
+    # Extraemos vectores como np.array
+    leg = window_df["normalized_leg_length"].values
+    hip = window_df["average_hip_angle"].values
+    knee = window_df["average_knee_angle"].values
+    ankle_z = window_df["ankle_vector_z"].values
+
+    leg_mean = float(leg.mean())
+    leg_std = float(leg.std())
+    hip_mean = float(hip.mean())
+    knee_mean = float(knee.mean())
+    ankle_z_mean = float(ankle_z.mean())
+    # cambio entre inicio y fin de la ventana
+    leg_delta = float(leg[-1] - leg[0])
+
+    label = raw_label
+
+    # --------- Heurística 1: sentarse / levantarse (transiciones) ---------
+    # Mucha variación en la longitud de la pierna y cambio neto claro.
+    if leg_std > 0.03:
+        # De largo → corto: sentándose
+        if leg_delta < -0.08:
+            label = "sitting_down"
+        # De corto → largo: levantándose
+        elif leg_delta > 0.08:
+            label = "standing_up"
+
+    # --------- Heurística 2: sentado quieto vs de pie quieto ---------
+    # Baja variación y longitud estable.
+    if leg_std < 0.02:
+        # Pierna relativamente corta + cadera flexionada ⇒ sentado
+        if leg_mean < 0.85 and 70 <= hip_mean <= 150:
+            label = "sitting_still"
+        # Pierna larga + cadera extendida ⇒ de pie quieto
+        elif leg_mean >= 0.9 and hip_mean > 150:
+            label = "standing_still"
+
+    return label
