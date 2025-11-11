@@ -50,11 +50,11 @@ FEATURE_COUNT = len(FEATURE_COLUMNS_V2)  # 7
 feature_buffer = deque(maxlen=WINDOW_SIZE)
 
 # Historial de predicciones crudas del modelo (IDs numéricos)
-PREDICTION_HISTORY_SIZE = 30            # ~1 segundo si vas ~30 FPS
+PREDICTION_HISTORY_SIZE = 10            # ~1 segundo si vas ~30 FPS
 prediction_history = deque(maxlen=PREDICTION_HISTORY_SIZE)
 
 # Cada cuánto tiempo se actualiza el texto en pantalla
-UPDATE_INTERVAL = 0.5                   # segundos
+UPDATE_INTERVAL = 0.33                   # segundos
 last_update_time = 0.0
 
 current_prediction = "Initializing..."
@@ -146,7 +146,7 @@ def generate_frames():
                     now = time.time()
                     if (
                         now - last_update_time >= UPDATE_INTERVAL
-                        and len(prediction_history) >= 5  # mínimo para votar
+                        and len(prediction_history) >= 9  # mínimo para votar
                     ):
                         values, counts = np.unique(
                             np.array(prediction_history), return_counts=True
